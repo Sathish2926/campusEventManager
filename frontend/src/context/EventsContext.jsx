@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { MOCK_EVENTS } from '../data/mockData';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { apiRequest } from '../utils/api';
 import { useAuth } from './AuthContext';
 
@@ -13,125 +12,130 @@ const mapEventFromApi = (event) => ({
   description: event.description,
   category: event.category,
   image: event.mainImage || event.thumbnailImage,
-  isRSVPd: false,
+  isRSVPd: false, // Default, will be recalculated or fetched
   status: event.status,
+  rsvpCount: event.rsvpCount || 0,
 });
 
 export const EventsProvider = ({ children }) => {
-  const { token } = useAuth();
-  const [events, setEvents] = useState(MOCK_EVENTS);
+  const { user, token } = useAuth();
+  const [events, setEvents] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  const refreshEvents = async () => {
+  const refreshMyEvents = useCallback(async () => {
+    if (!token || !user || user.role !== 'student') {
+      setMyEvents([]);
+      return;
+    }
+    try {
+      const rsvps = await apiRequest(`/rsvps/user/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const mapped = rsvps
+        .filter((r) => r.eventId && r.status === 'attending')
+        .map((r) => ({
+          ...mapEventFromApi(r.eventId),
+          isRSVPd: true,
+        }));
+      setMyEvents(mapped);
+    } catch {
+      setMyEvents([]);
+    }
+  }, [token, user]);
+
+  const refreshEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
       const payload = await apiRequest('/events');
-
-      if (!Array.isArray(payload)) {
-        setEvents(MOCK_EVENTS);
-      } else {
+      if (Array.isArray(payload)) {
         setEvents(payload.map(mapEventFromApi));
+      } else {
+        setEvents([]);
       }
     } catch {
-      setEvents(MOCK_EVENTS);
+      setEvents([]);
     } finally {
       setLoadingEvents(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshEvents();
-  }, []);
+  }, [refreshEvents]);
 
-  const addEvent = (payload) => {
-    if (!token) {
-      throw new Error('Please login to create events');
-    }
+  useEffect(() => {
+    refreshMyEvents();
+  }, [refreshMyEvents]);
 
-    return apiRequest('/events', {
+  const addEvent = async (payload) => {
+    if (!token) throw new Error('Please login to create events');
+
+    const newEvent = await apiRequest('/events', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({
-        title: payload.title,
-        description: payload.description,
-        date: payload.date,
-        time: payload.time,
-        venue: payload.venue,
-        category: payload.category,
+        ...payload,
         mainImage: payload.image,
         thumbnailImage: payload.image,
       }),
-    }).then((newEvent) => {
-      const mappedEvent = mapEventFromApi(newEvent);
-      setEvents((currentEvents) => [mappedEvent, ...currentEvents]);
-      return mappedEvent;
     });
+    
+    await refreshEvents();
+    return mapEventFromApi(newEvent);
   };
 
-  const toggleRSVP = (eventId, isRSVPd) => {
-    if (!token) {
-      throw new Error('Please login to RSVP');
-    }
+  const toggleRSVP = async (eventId, isRSVPd) => {
+    if (!token) throw new Error('Please login to RSVP');
 
     const method = isRSVPd ? 'PATCH' : 'POST';
     const path = isRSVPd ? `/rsvps/${eventId}/cancel` : '/rsvps';
 
-    return apiRequest(path, {
+    await apiRequest(path, {
       method,
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ eventId }),
-    }).then(() => refreshEvents());
+    });
+
+    await Promise.all([refreshEvents(), refreshMyEvents()]);
   };
 
   const fetchMyRsvps = async (userId) => {
+    // Deprecated for direct state, but kept for compatibility if needed
     if (!token) return [];
-    try {
-      const rsvps = await apiRequest(`/rsvps/user/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return rsvps.map((r) => ({
-        ...mapEventFromApi(r.eventId),
-        isRSVPd: r.status === 'attending',
-      }));
-    } catch {
-      return [];
-    }
+    const rsvps = await apiRequest(`/rsvps/user/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return rsvps.filter(r => r.eventId && r.status === 'attending').map(r => ({
+      ...mapEventFromApi(r.eventId),
+      isRSVPd: true
+    }));
   };
 
   const fetchOrganizerEvents = async (organizerId) => {
     if (!token) return [];
-    try {
-      const payload = await apiRequest(`/events?organizerId=${organizerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return payload.map(mapEventFromApi);
-    } catch {
-      return [];
-    }
+    const payload = await apiRequest(`/events?organizerId=${organizerId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return payload.map(mapEventFromApi);
   };
 
   const fetchEventAttendance = async (eventId) => {
     if (!token) return [];
-    try {
-      const [rsvps, attendance] = await Promise.all([
-        apiRequest(`/rsvps/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        apiRequest(`/attendance/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
+    const [rsvps, attendance] = await Promise.all([
+      apiRequest(`/rsvps/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
+      apiRequest(`/attendance/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
 
-      return rsvps.map((r) => {
-        const attend = attendance.find((a) => String(a.userId._id) === String(r.userId._id));
-        return {
-          id: r.userId._id,
-          name: r.userId.name,
-          email: r.userId.email,
-          present: attend ? attend.status === 'present' : false,
-        };
-      });
-    } catch {
-      return [];
-    }
+    return rsvps.map((r) => {
+      const attend = attendance.find((a) => String(a.userId._id) === String(r.userId._id));
+      return {
+        id: r.userId._id,
+        name: r.userId.name,
+        email: r.userId.email,
+        present: attend ? attend.status === 'present' : false,
+      };
+    });
   };
 
   const markAttendance = async (eventId, userId, status) => {
@@ -146,16 +150,18 @@ export const EventsProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       events,
+      myEvents,
       loadingEvents,
       addEvent,
       refreshEvents,
+      refreshMyEvents,
       toggleRSVP,
       fetchMyRsvps,
       fetchOrganizerEvents,
       fetchEventAttendance,
       markAttendance,
     }),
-    [events, loadingEvents, token]
+    [events, myEvents, loadingEvents, refreshEvents, refreshMyEvents, token]
   );
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;
@@ -163,10 +169,6 @@ export const EventsProvider = ({ children }) => {
 
 export const useEvents = () => {
   const context = useContext(EventsContext);
-
-  if (!context) {
-    throw new Error('useEvents must be used within EventsProvider');
-  }
-
+  if (!context) throw new Error('useEvents must be used within EventsProvider');
   return context;
 };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import Button from '../components/ui/Button';
@@ -10,23 +10,12 @@ import { useEvents } from '../context/EventsContext';
 const MyEvents = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { fetchMyRsvps } = useEvents();
-  const [myEvents, setMyEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { myEvents, loadingEvents } = useEvents();
   const [filter, setFilter] = useState('upcoming');
-
-  useEffect(() => {
-    if (user) {
-      fetchMyRsvps(user.id).then((data) => {
-        setMyEvents(data);
-        setLoading(false);
-      });
-    }
-  }, [user, fetchMyRsvps]);
 
   const filteredEvents = myEvents.filter((e) => filter === 'all' || e.status === filter);
 
-  if (loading) {
+  if (loadingEvents) {
     return (
       <div className="flex h-96 items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>

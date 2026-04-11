@@ -92,7 +92,7 @@ router.get('/user/:userId', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'Access denied for this RSVP list' });
     }
 
-    const rsvps = await RSVP.find({ userId: req.params.userId }).populate('eventId', 'title date venue status');
+    const rsvps = await RSVP.find({ userId: req.params.userId, status: 'attending' }).populate('eventId');
     res.json(rsvps);
   } catch (error) {
     res.status(500).json({ message: error.message });
