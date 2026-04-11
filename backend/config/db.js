@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-  const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/campus_event_manager';
+  const mongoUri = process.env.MONGO_URI || "mongodb+srv://25mx101:Balaji2005@cluster0.uxvmc5q.mongodb.net/?appName=Cluster0";
 
   try {
     const connection = await mongoose.connect(mongoUri);
