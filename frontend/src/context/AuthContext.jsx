@@ -60,10 +60,10 @@ export const AuthProvider = ({ children }) => {
     return payload.user;
   };
 
-  const signup = async ({ name, email, password, role, department, year }) => {
+  const signup = async ({ name, email, password, role, department, year, adminCode }) => {
     const payload = await apiRequest('/users/signup', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, role, department, year }),
+      body: JSON.stringify({ name, email, password, role, department, year, adminCode }),
     });
 
     setUser(payload.user);

@@ -69,6 +69,10 @@ router.get('/', async (req, res) => {
       filter.date = new Date(req.query.date);
     }
 
+    if (req.query.organizerId) {
+      filter.organizerId = req.query.organizerId;
+    }
+
     const events = await Event.find(filter)
       .populate('organizerId', 'name email role')
       .sort({ date: 1, createdAt: -1 });

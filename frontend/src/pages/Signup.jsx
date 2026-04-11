@@ -12,6 +12,7 @@ const initialValues = {
   role: 'student',
   department: '',
   year: '',
+  adminCode: '',
 };
 
 const Signup = () => {
@@ -41,6 +42,10 @@ const Signup = () => {
   const validateForm = () => {
     if (!values.name.trim() || !values.email.trim() || !values.password.trim() || !values.role) {
       return 'Please fill all required fields';
+    }
+
+    if (values.role === 'admin' && !values.adminCode.trim()) {
+      return 'Please enter the admin secret code';
     }
 
     if (!/^\S+@\S+\.\S+$/.test(values.email)) {
@@ -116,6 +121,17 @@ const Signup = () => {
             </div>
 
             <Input label="Year" type="number" min="1" value={values.year} onChange={(event) => setValues({ ...values, year: event.target.value })} />
+
+            {values.role === 'admin' && (
+              <Input
+                label="Admin Secret Code"
+                type="password"
+                placeholder="Enter admin code"
+                value={values.adminCode}
+                onChange={(event) => setValues({ ...values, adminCode: event.target.value })}
+                required
+              />
+            )}
 
             {errorMessage && <p className="text-sm font-medium text-red-600">{errorMessage}</p>}
           </div>

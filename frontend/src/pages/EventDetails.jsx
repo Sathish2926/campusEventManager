@@ -1,22 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, Share2, CheckCircle2, Users } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useEvents } from '../context/EventsContext';
+import { apiRequest } from '../utils/api';
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { events } = useEvents();
-  const event = events.find((item) => String(item.id) === String(id)) || events[0];
+  const { user, token } = useAuth();
+  const { events, toggleRSVP: toggleRSVPContext } = useEvents();
   
-  const [isRSVPd, setIsRSVPd] = useState(event?.isRSVPd);
-  const [rsvpCount, setRsvpCount] = useState(124 + (event?.isRSVPd ? 1 : 0));
+  // Find event or null
+  const event = events.find((item) => String(item.id) === String(id));
+  
+  const [isRSVPd, setIsRSVPd] = useState(false);
+  const [rsvpCount, setRsvpCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Sync initial state from event object and fetch latest RSVP status
+  useEffect(() => {
+    if (event) {
+      setRsvpCount(event.rsvpCount || 0);
+    }
+  }, [event]);
+
+  useEffect(() => {
+    if (user && id && token) {
+      // Check if user is already RSVPd by fetching their RSVPs
+      apiRequest(`/rsvps/user/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(rsvps => {
+        const hasRsvp = rsvps.find(r => String(r.eventId._id || r.eventId) === String(id) && r.status === 'attending');
+        setIsRSVPd(!!hasRsvp);
+      }).catch(() => {});
+    }
+  }, [user, id, token]);
 
   if (!event) {
-    return null;
+    return (
+       <div className="flex h-screen items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+       </div>
+    );
   }
 
   const eventDate = new Date(event.date);
@@ -27,13 +54,18 @@ const EventDetails = () => {
     hour: 'numeric', minute: '2-digit'
   });
 
-  const toggleRSVP = () => {
-    if (isRSVPd) {
-      setRsvpCount(prev => prev - 1);
-    } else {
-      setRsvpCount(prev => prev + 1);
+  const handleToggleRSVP = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await toggleRSVPContext(event.id, isRSVPd);
+      setIsRSVPd(!isRSVPd);
+      setRsvpCount(prev => isRSVPd ? prev - 1 : prev + 1);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
     }
-    setIsRSVPd(!isRSVPd);
   };
 
   return (
@@ -54,10 +86,10 @@ const EventDetails = () => {
         </button>
 
         <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          <span className="inline-block px-3 py-1 bg-primary/90 backdrop-blur-sm text-white text-sm font-semibold rounded-full mb-3">
+          <span className="inline-block px-3 py-1 bg-primary/90 backdrop-blur-sm text-white text-sm font-semibold rounded-full mb-3 uppercase tracking-wider">
             {event.category}
           </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-2 leading-tight">
             {event.title}
           </h1>
         </div>
@@ -120,17 +152,18 @@ const EventDetails = () => {
                 <Button className="w-full opacity-50 cursor-not-allowed" disabled>
                   Event Ended
                 </Button>
-              ) : user?.role === 'organizer' ? (
+              ) : user?.role === 'organizer' || user?.role === 'admin' ? (
                 <Button className="w-full" onClick={() => navigate(`/organizer/attendance/${event.id}`)}>
-                  View Attendance
+                  Manage Attendance
                 </Button>
               ) : (
                 <Button 
                   className="w-full flex justify-center items-center gap-2"
                   variant={isRSVPd ? 'secondary' : 'primary'}
-                  onClick={toggleRSVP}
+                  onClick={handleToggleRSVP}
+                  disabled={loading}
                 >
-                  {isRSVPd ? (
+                  {loading ? 'Processing...' : isRSVPd ? (
                     <>
                       <CheckCircle2 size={20} className="text-green-500" />
                       RSVP Confirmed

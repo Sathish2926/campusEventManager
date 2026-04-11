@@ -1,19 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EventCard from '../components/EventCard';
 import Button from '../components/ui/Button';
-import { MOCK_EVENTS } from '../data/mockData';
 import { BookmarkMinus } from 'lucide-react';
 import { getEventDetailsPath } from '../utils/routeHelpers';
 import { useAuth } from '../context/AuthContext';
+import { useEvents } from '../context/EventsContext';
 
 const MyEvents = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const myEvents = MOCK_EVENTS.filter(e => e.isRSVPd);
+  const { fetchMyRsvps } = useEvents();
+  const [myEvents, setMyEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('upcoming');
 
-  const filteredEvents = myEvents.filter(e => filter === 'all' || e.status === filter);
+  useEffect(() => {
+    if (user) {
+      fetchMyRsvps(user.id).then((data) => {
+        setMyEvents(data);
+        setLoading(false);
+      });
+    }
+  }, [user, fetchMyRsvps]);
+
+  const filteredEvents = myEvents.filter((e) => filter === 'all' || e.status === filter);
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto min-h-screen max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -22,21 +41,21 @@ const MyEvents = () => {
           <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">My Events</h1>
           <p className="mt-1 text-slate-500 dark:text-slate-400">Manage your registered events</p>
         </div>
-        
+
         <div className="flex rounded-lg border border-slate-100 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <button 
+          <button
             onClick={() => setFilter('all')}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${filter === 'all' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'}`}
           >
             All
           </button>
-          <button 
+          <button
             onClick={() => setFilter('upcoming')}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${filter === 'upcoming' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'}`}
           >
             Upcoming
           </button>
-          <button 
+          <button
             onClick={() => setFilter('completed')}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${filter === 'completed' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'}`}
           >
@@ -47,7 +66,7 @@ const MyEvents = () => {
 
       {filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredEvents.map(event => (
+          {filteredEvents.map((event) => (
             <EventCard key={event.id} event={event} to={getEventDetailsPath(user.role, event.id)} />
           ))}
         </div>

@@ -70,14 +70,92 @@ export const EventsProvider = ({ children }) => {
     });
   };
 
+  const toggleRSVP = (eventId, isRSVPd) => {
+    if (!token) {
+      throw new Error('Please login to RSVP');
+    }
+
+    const method = isRSVPd ? 'PATCH' : 'POST';
+    const path = isRSVPd ? `/rsvps/${eventId}/cancel` : '/rsvps';
+
+    return apiRequest(path, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ eventId }),
+    }).then(() => refreshEvents());
+  };
+
+  const fetchMyRsvps = async (userId) => {
+    if (!token) return [];
+    try {
+      const rsvps = await apiRequest(`/rsvps/user/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return rsvps.map((r) => ({
+        ...mapEventFromApi(r.eventId),
+        isRSVPd: r.status === 'attending',
+      }));
+    } catch {
+      return [];
+    }
+  };
+
+  const fetchOrganizerEvents = async (organizerId) => {
+    if (!token) return [];
+    try {
+      const payload = await apiRequest(`/events?organizerId=${organizerId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return payload.map(mapEventFromApi);
+    } catch {
+      return [];
+    }
+  };
+
+  const fetchEventAttendance = async (eventId) => {
+    if (!token) return [];
+    try {
+      const [rsvps, attendance] = await Promise.all([
+        apiRequest(`/rsvps/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        apiRequest(`/attendance/event/${eventId}`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      return rsvps.map((r) => {
+        const attend = attendance.find((a) => String(a.userId._id) === String(r.userId._id));
+        return {
+          id: r.userId._id,
+          name: r.userId.name,
+          email: r.userId.email,
+          present: attend ? attend.status === 'present' : false,
+        };
+      });
+    } catch {
+      return [];
+    }
+  };
+
+  const markAttendance = async (eventId, userId, status) => {
+    if (!token) return;
+    return apiRequest('/attendance', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ eventId, userId, status }),
+    });
+  };
+
   const value = useMemo(
     () => ({
       events,
       loadingEvents,
       addEvent,
       refreshEvents,
+      toggleRSVP,
+      fetchMyRsvps,
+      fetchOrganizerEvents,
+      fetchEventAttendance,
+      markAttendance,
     }),
-    [events, loadingEvents]
+    [events, loadingEvents, token]
   );
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;

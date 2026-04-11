@@ -10,12 +10,14 @@ const readErrorMessage = async (response) => {
 };
 
 export const apiRequest = async (path, options = {}) => {
+  const { headers: customHeaders, ...restOptions } = options;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...(customHeaders || {}),
     },
-    ...options,
+    ...restOptions,
   });
 
   if (!response.ok) {

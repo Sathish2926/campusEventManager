@@ -11,7 +11,7 @@ const isStrongPassword = (password) => {
 
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password, role, department, year, profileImage } = req.body;
+    const { name, email, password, role, department, year, profileImage, adminCode } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'Name, email, password, and role are required' });
@@ -25,6 +25,13 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({
         message: 'Password must be at least 8 characters with uppercase, lowercase, number, and symbol',
       });
+    }
+
+    if (role === 'admin') {
+      const adminSecret = process.env.ADMIN_SIGNUP_SECRET || 'ADMIN@2026';
+      if (adminCode !== adminSecret) {
+        return res.status(403).json({ message: 'Invalid admin secret code' });
+      }
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
