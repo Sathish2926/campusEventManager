@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, ArrowLeft, Share2, CheckCircle2, Users } from 'lucide-react';
 import Button from '../components/ui/Button';
-import { MOCK_EVENTS } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+import { useEvents } from '../context/EventsContext';
 
 const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  // Find event or use default if not found for mock purposes
-  const event = MOCK_EVENTS.find(e => e.id === parseInt(id)) || MOCK_EVENTS[0];
+  const { user } = useAuth();
+  const { events } = useEvents();
+  const event = events.find((item) => String(item.id) === String(id)) || events[0];
   
-  const [isRSVPd, setIsRSVPd] = useState(event.isRSVPd);
-  // Give mock events a base RSVP count of 124 for demonstration
-  const [rsvpCount, setRsvpCount] = useState(124 + (event.isRSVPd ? 1 : 0));
+  const [isRSVPd, setIsRSVPd] = useState(event?.isRSVPd);
+  const [rsvpCount, setRsvpCount] = useState(124 + (event?.isRSVPd ? 1 : 0));
+
+  if (!event) {
+    return null;
+  }
 
   const eventDate = new Date(event.date);
   const formattedDate = eventDate.toLocaleDateString('en-US', {
@@ -32,7 +37,7 @@ const EventDetails = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="min-h-screen bg-background pb-12 dark:bg-slate-950">
       <div className="relative h-64 md:h-80 lg:h-96 w-full">
         <img 
           src={event.image || "https://images.unsplash.com/photo-1540575467063-178a50c2df87"} 
@@ -60,19 +65,19 @@ const EventDetails = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex flex-col lg:flex-row gap-8">
         <div className="flex-1">
-          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-soft border border-slate-100 mb-8">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">About This Event</h2>
-            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-soft border border-slate-100 mb-8 dark:bg-slate-900 dark:border-slate-800">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4 dark:text-slate-100">About This Event</h2>
+            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap dark:text-slate-300">
               {event.description}
             </p>
           </div>
         </div>
 
         <div className="w-full lg:w-96 flex flex-col gap-6">
-          <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100">
+          <div className="bg-white rounded-2xl p-6 shadow-soft border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-slate-800">Event Details</h3>
-                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Event Details</h3>
+                <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
                   <Users size={14} className={isRSVPd ? "text-primary" : ""} />
                   {rsvpCount} Attending
                 </div>
@@ -80,40 +85,44 @@ const EventDetails = () => {
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
+                <div className="p-2 rounded-lg bg-secondary/10 text-secondary dark:bg-secondary/20">
                   <Calendar size={20} />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">{formattedDate}</p>
-                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{formattedDate}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Date</p>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
+                <div className="p-2 rounded-lg bg-secondary/10 text-secondary dark:bg-secondary/20">
                   <Clock size={20} />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">{formattedTime}</p>
-                  <p className="text-sm text-slate-500">Time</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{formattedTime}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Time</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-secondary/10 text-secondary">
+                <div className="p-2 rounded-lg bg-secondary/10 text-secondary dark:bg-secondary/20">
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">{event.venue}</p>
-                  <p className="text-sm text-slate-500">Location</p>
+                  <p className="font-medium text-slate-800 dark:text-slate-100">{event.venue}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Location</p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100">
+            <div className="mt-8 border-t border-slate-100 pt-6 dark:border-slate-800">
               {event.status === 'completed' ? (
                 <Button className="w-full opacity-50 cursor-not-allowed" disabled>
                   Event Ended
+                </Button>
+              ) : user?.role === 'organizer' ? (
+                <Button className="w-full" onClick={() => navigate(`/organizer/attendance/${event.id}`)}>
+                  View Attendance
                 </Button>
               ) : (
                 <Button 

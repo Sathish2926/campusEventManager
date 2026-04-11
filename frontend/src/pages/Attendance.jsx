@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import { Search, CheckCircle2, Circle } from 'lucide-react';
-import { MOCK_EVENTS } from '../data/mockData';
+import { useEvents } from '../context/EventsContext';
 
-// Expand mock attendees to include eventId to demonstrate dynamic filtering
 const MOCK_ATTENDEES = [
   { id: 1, eventId: 1, name: "Alice Johnson", email: "alice.j@student.edu", present: true },
   { id: 2, eventId: 1, name: "Bob Smith", email: "b.smith@student.edu", present: false },
@@ -16,9 +16,17 @@ const MOCK_ATTENDEES = [
 ];
 
 const Attendance = () => {
+  const { eventId } = useParams();
+  const { events } = useEvents();
   const [attendees, setAttendees] = useState(MOCK_ATTENDEES);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEventId, setSelectedEventId] = useState(MOCK_EVENTS[0].id);
+  const [selectedEventId, setSelectedEventId] = useState(Number(eventId) || events[0]?.id);
+
+  useEffect(() => {
+    if (eventId) {
+      setSelectedEventId(Number(eventId));
+    }
+  }, [eventId]);
 
   const toggleAttendance = (id) => {
     setAttendees(attendees.map(a => 
@@ -33,27 +41,29 @@ const Attendance = () => {
     return matchesEvent && matchesSearch;
   });
 
+  const selectedEvent = events.find((event) => Number(event.id) === Number(selectedEventId));
+
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">Attendance</h1>
-        <p className="text-slate-500 mt-1">Manage event check-ins</p>
+        <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Attendance</h1>
+        <p className="mt-1 text-slate-500 dark:text-slate-400">Manage event check-ins</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-soft border border-slate-100 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+      <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col justify-between gap-4 border-b border-slate-100 bg-slate-50 p-6 md:flex-row md:items-center dark:border-slate-800 dark:bg-slate-950/40">
           <div className="w-full md:w-64">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block">Select Event</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select Event</label>
             <select 
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white shadow-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none text-sm font-medium"
+              className="w-full appearance-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium shadow-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(Number(e.target.value))}
             >
-              {MOCK_EVENTS.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
+              {events.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
             </select>
           </div>
           <div className="w-full md:w-72 relative">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1 block opacity-0 hidden md:block">Search</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500 opacity-0 hidden md:block dark:text-slate-400">Search</label>
             <Search className="absolute left-3 top-[calc(50%+2px)] transform -translate-y-1/2 text-slate-400" size={18} />
             <Input 
               placeholder="Search by name or email..." 
@@ -63,11 +73,17 @@ const Attendance = () => {
             />
           </div>
         </div>
+
+          {selectedEvent && (
+            <div className="px-6 pb-6 text-sm text-slate-500 dark:text-slate-400">
+              Selected event: <span className="font-semibold text-slate-800 dark:text-slate-100">{selectedEvent.title}</span>
+            </div>
+          )}
         
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white text-xs uppercase tracking-widest text-slate-400 border-b border-slate-100">
+              <tr className="border-b border-slate-100 bg-white text-xs uppercase tracking-widest text-slate-400 dark:border-slate-800 dark:bg-slate-900">
                 <th className="px-6 py-4 font-semibold">Attendee Info</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold text-right">Action</th>
@@ -75,15 +91,15 @@ const Attendance = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredAttendees.map((attendee) => (
-                <tr key={attendee.id} className="hover:bg-slate-50 transition-colors group">
+                <tr key={attendee.id} className="group transition-colors hover:bg-slate-50 dark:hover:bg-slate-950/50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-sm font-bold text-slate-600 dark:from-slate-800 dark:to-slate-700 dark:text-slate-100">
                         {attendee.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-800">{attendee.name}</p>
-                        <p className="text-xs text-slate-500">{attendee.email}</p>
+                        <p className="font-semibold text-slate-800 dark:text-slate-100">{attendee.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{attendee.email}</p>
                       </div>
                     </div>
                   </td>
@@ -113,10 +129,10 @@ const Attendance = () => {
           </table>
         </div>
         {filteredAttendees.length === 0 && (
-          <div className="p-12 text-center flex flex-col items-center justify-center border-t border-slate-50">
+          <div className="flex flex-col items-center justify-center border-t border-slate-50 p-12 text-center dark:border-slate-800">
             <Circle className="text-slate-300 mb-3" size={32} />
-            <h3 className="text-lg font-medium text-slate-700">No attendees found</h3>
-            <p className="text-sm text-slate-500 mt-1 max-w-sm">No registered attendees match your criteria for this event.</p>
+            <h3 className="text-lg font-medium text-slate-700 dark:text-slate-100">No attendees found</h3>
+            <p className="mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">No registered attendees match your criteria for this event.</p>
           </div>
         )}
       </div>

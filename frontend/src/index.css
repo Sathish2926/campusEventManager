@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    @apply bg-background dark:bg-slate-950;
+  }
+
   body {
-    @apply bg-background text-slate-800 font-sans antialiased;
+    @apply min-h-screen bg-background text-slate-800 font-sans antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100;
   }
 }
 

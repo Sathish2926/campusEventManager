@@ -1,65 +1,69 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
-import EventCard from '../components/EventCard';
 import { MOCK_EVENTS } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+import { getHomePath } from '../utils/routeHelpers';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const upcomingEvents = MOCK_EVENTS.filter(e => e.status === 'upcoming').slice(0, 6);
+  const { user } = useAuth();
+  const upcomingEvents = MOCK_EVENTS.filter((event) => event.status === 'upcoming').slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-background">
-      <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
-        <div className="flex-1 text-center lg:text-left">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-800 tracking-tight mb-6">
-            Discover Student <br className="hidden lg:block"/>
-            Events on <span className="text-gradient">Campus</span>
-          </h1>
-          <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto lg:mx-0">
-            Never miss an important event again. Find hackathons, concerts, club meetings, and career fairs all in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-            <Button onClick={() => navigate('/events')} className="w-full sm:w-auto text-lg px-8 py-3">
-              Explore Events
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/my-events')} className="w-full sm:w-auto text-lg px-8 py-3">
-              View My Tickets
-            </Button>
-          </div>
-        </div>
-        <div className="flex-1 w-full max-w-lg lg:max-w-none">
-          <div className="relative rounded-2xl overflow-hidden shadow-soft aspect-[4/3] transform rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
-            <img 
-              src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=800&q=80" 
-              alt="Students gathering" 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
-              <h3 className="text-white text-2xl font-bold">Vibrant Campus Life</h3>
+    <div className="min-h-screen overflow-hidden bg-background dark:bg-slate-950">
+      <section className="relative isolate px-4 pb-16 pt-24 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(139,92,246,0.16),_transparent_40%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.1),_transparent_40%)]" />
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <span className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 shadow-soft dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+              Campus Event Manager
+            </span>
+            <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-900 sm:text-5xl lg:text-6xl dark:text-slate-50">
+              One place for campus events, RSVPs, and attendance.
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
+              A clean event hub for students, organizers, and admins to manage campus activity without extra clutter.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button onClick={() => navigate('/login')} className="px-6 py-3 text-base">
+                Login to Continue
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/signup')} className="px-6 py-3 text-base">
+                Create Account
+              </Button>
+              {user && (
+                <Button variant="secondary" onClick={() => navigate(getHomePath(user.role))} className="px-6 py-3 text-base">
+                  Go to Dashboard
+                </Button>
+              )}
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-16">
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="text-2xl font-bold text-slate-800">Upcoming Events</h2>
-          <Button variant="ghost" onClick={() => navigate('/events')} className="hidden sm:flex text-slate-600 hover:text-primary">
-            View all
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {upcomingEvents.map(event => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
-        
-        <div className="mt-8 text-center sm:hidden">
-          <Button variant="secondary" onClick={() => navigate('/events')} className="w-full">
-            View all events
-          </Button>
+          <div className="relative">
+            <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-primary opacity-20 blur-3xl" />
+            <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-soft-hover dark:border-slate-800 dark:bg-slate-900">
+              <img
+                src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=1200&q=80"
+                alt="Students at an event"
+                className="h-[420px] w-full object-cover"
+              />
+              <div className="space-y-4 p-6">
+                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-300">
+                  <span>Login to continue</span>
+                  <span>{upcomingEvents.length} upcoming highlights</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {upcomingEvents.map((event) => (
+                    <div key={event.id} className="rounded-2xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{event.title}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{event.venue}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
