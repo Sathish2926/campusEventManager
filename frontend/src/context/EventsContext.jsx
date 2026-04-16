@@ -12,7 +12,7 @@ const mapEventFromApi = (event) => ({
   description: event.description,
   category: event.category,
   image: event.mainImage || event.thumbnailImage,
-  isRSVPd: false, // Default, will be recalculated or fetched
+  isRSVPd: false,
   status: event.status,
   rsvpCount: event.rsvpCount || 0,
 });
@@ -47,7 +47,10 @@ export const EventsProvider = ({ children }) => {
   const refreshEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
-      const payload = await apiRequest('/events');
+      const endpoint = token ? '/events' : '/events/public';
+      const payload = await apiRequest(endpoint, token ? {
+        headers: { Authorization: `Bearer ${token}` },
+      } : {});
       if (Array.isArray(payload)) {
         setEvents(payload.map(mapEventFromApi));
       } else {
@@ -58,7 +61,7 @@ export const EventsProvider = ({ children }) => {
     } finally {
       setLoadingEvents(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     refreshEvents();
@@ -101,7 +104,7 @@ export const EventsProvider = ({ children }) => {
   };
 
   const fetchMyRsvps = async (userId) => {
-    // Deprecated for direct state, but kept for compatibility if needed
+    
     if (!token) return [];
     const rsvps = await apiRequest(`/rsvps/user/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },

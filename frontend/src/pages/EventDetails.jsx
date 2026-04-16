@@ -12,14 +12,14 @@ const EventDetails = () => {
   const { user, token } = useAuth();
   const { events, toggleRSVP: toggleRSVPContext } = useEvents();
   
-  // Find event or null
+  
   const event = events.find((item) => String(item.id) === String(id));
   
   const [isRSVPd, setIsRSVPd] = useState(false);
   const [rsvpCount, setRsvpCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Sync initial state from event object and fetch latest RSVP status
+  
   useEffect(() => {
     if (event) {
       setRsvpCount(event.rsvpCount || 0);
@@ -28,7 +28,7 @@ const EventDetails = () => {
 
   useEffect(() => {
     if (user && id && token) {
-      // Check if user is already RSVPd by fetching their RSVPs
+      
       apiRequest(`/rsvps/user/${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then(rsvps => {

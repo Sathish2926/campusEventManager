@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleLayout from './components/RoleLayout';
@@ -41,6 +42,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />

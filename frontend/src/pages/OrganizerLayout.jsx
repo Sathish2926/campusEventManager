@@ -9,7 +9,7 @@ const OrganizerLayout = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Mobile sidebar overlay */}
+      
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/50 z-20 lg:hidden backdrop-blur-sm"
@@ -17,7 +17,7 @@ const OrganizerLayout = () => {
         />
       )}
 
-      {/* Sidebar */}
+      
       <div className={`
         fixed lg:static inset-y-0 left-0 z-30 transform lg:transform-none transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -25,7 +25,7 @@ const OrganizerLayout = () => {
         <Sidebar />
       </div>
 
-      {/* Main content */}
+      
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="bg-white border-b border-slate-100 px-4 py-4 lg:hidden flex items-center justify-between shadow-sm z-10">
           <button 
@@ -35,11 +35,10 @@ const OrganizerLayout = () => {
             <Menu size={24} />
           </button>
           <span className="font-bold text-slate-800">Organizer Panel</span>
-          <div className="w-10"></div> {/* Spacer for centering */}
+          <div className="w-10"></div> 
         </header>
 
         <main className="flex-1 overflow-y-auto w-full">
-          {/* Back to student view button (desktop) */}
           <div className="absolute top-4 right-4 z-40 hidden lg:block">
             <button 
               onClick={() => navigate('/')}

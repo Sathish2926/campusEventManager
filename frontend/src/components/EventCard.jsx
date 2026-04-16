@@ -42,10 +42,13 @@ const EventCard = ({ event, to }) => {
           </div>
 
           <div className="mt-auto pt-4 border-t border-slate-100 flex justify-between items-center dark:border-slate-800">
-            <span className={`text-xs font-medium px-2 py-1 rounded-md ${
-              event.status === 'upcoming' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
-            } dark:bg-slate-800 dark:text-slate-200`}>
-              {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+            <span className={`text-xs font-bold px-2 py-1 uppercase tracking-wider rounded-md ${
+              event.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300' : 
+              event.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-300' : 
+              event.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300' :
+              'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-200'
+            }`}>
+              {event.status}
             </span>
             {event.isRSVPd && (
               <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-md dark:bg-primary/20 dark:text-sky-300">

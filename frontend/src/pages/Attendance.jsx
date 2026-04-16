@@ -16,7 +16,7 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Load available events for the organizer
+  
   useEffect(() => {
     if (user) {
       fetchOrganizerEvents(user.id).then(data => {
@@ -28,7 +28,7 @@ const Attendance = () => {
     }
   }, [user, fetchOrganizerEvents]);
 
-  // Load attendance for selected event
+  
   useEffect(() => {
     if (selectedEventId) {
       setLoading(true);
@@ -43,7 +43,7 @@ const Attendance = () => {
     const newStatus = currentStatus ? 'absent' : 'present';
     try {
       await markAttendance(selectedEventId, userId, newStatus);
-      // Optimistic update
+      
       setAttendees(prev => prev.map(a => a.id === userId ? { ...a, present: !currentStatus } : a));
     } catch (err) {
       alert("Failed to update attendance: " + err.message);

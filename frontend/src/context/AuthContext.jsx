@@ -49,6 +49,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null);
+      setToken('');
+    };
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, []);
+
   const login = async ({ email, password }) => {
     const payload = await apiRequest('/users/login', {
       method: 'POST',

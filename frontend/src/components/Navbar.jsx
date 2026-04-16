@@ -104,7 +104,7 @@ const Navbar = () => {
                 )}
               </div>
 
-              <NavLink to={getHomePath(user?.role)} className="text-xl font-bold text-gradient transition-transform hover:scale-105">
+              <NavLink to={user ? getHomePath(user.role) : "/"} className="text-xl font-bold text-gradient transition-transform hover:scale-105">
                 CampusEvents
               </NavLink>
             </div>

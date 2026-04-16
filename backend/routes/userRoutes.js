@@ -118,19 +118,52 @@ router.get('/me', requireAuth, async (req, res) => {
   return res.json({ user: req.user });
 });
 
-router.post('/', async (req, res) => {
+router.get('/', requireAuth, requireRole('admin'), async (_req, res) => {
   try {
-    const user = await User.create(req.body);
-    res.status(201).json(user);
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put('/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { role, isBlocked } = req.body;
+    
+    // Prevent admin from changing their own role/block status to lock themselves out
+    if (String(req.user._id) === req.params.id) {
+      if (role && role !== 'admin') {
+        return res.status(400).json({ message: 'You cannot demote yourself' });
+      }
+      if (isBlocked === true) {
+        return res.status(400).json({ message: 'You cannot block yourself' });
+      }
+    }
+
+    const updates = {};
+    if (role) updates.role = role;
+    if (isBlocked !== undefined) updates.isBlocked = isBlocked;
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.json(user);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 });
 
-router.get('/', requireAuth, requireRole('admin'), async (_req, res) => {
+router.delete('/:id', requireAuth, requireRole('admin'), async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    res.json(users);
+    if (String(req.user._id) === req.params.id) {
+      return res.status(400).json({ message: 'You cannot delete yourself' });
+    }
+
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

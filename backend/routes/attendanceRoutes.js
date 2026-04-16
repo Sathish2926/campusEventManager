@@ -57,7 +57,7 @@ router.post('/', requireAuth, requireRole('organizer', 'admin'), async (req, res
   }
 });
 
-router.get('/event/:eventId', async (req, res) => {
+router.get('/event/:eventId', requireAuth, requireRole('organizer', 'admin'), async (req, res) => {
   try {
     const attendance = await Attendance.find({ eventId: req.params.eventId })
       .populate('userId', 'name email role')
